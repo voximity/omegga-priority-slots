@@ -41,7 +41,7 @@ export default class Plugin implements OmeggaPlugin<Config, {}> {
           this.omegga.writeln(
             `Chat.Command /Kick "${player.name}" "${this.config.message
               .replace(/\{\}/g, this.config.slots.toString())
-              .replace('"', '\\"')}"`
+              .replace(/"/g, '\\"')}"`
           );
         }
       });
