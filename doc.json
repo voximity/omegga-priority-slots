@@ -1,0 +1,24 @@
+{
+  "name": "priority-slots",
+  "description": "Reserve some of the slots in your server for players with priority roles.",
+  "author": "voximity",
+  "config": {
+    "slots": {
+      "type": "number",
+      "description": "The number of slots to reserve as priority.",
+      "default": 5
+    },
+    "message": {
+      "type": "string",
+      "description": "The message to be displayed when someone is prevented from joining.",
+      "default": "Sorry, but {} of the slots on this server are reserved for priority players."
+    },
+    "roles": {
+      "type": "list",
+      "itemType": "role",
+      "description": "The roles that are considered priority players.",
+      "default": []
+    }
+  },
+  "commands": []
+}
