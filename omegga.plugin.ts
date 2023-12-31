@@ -7,6 +7,8 @@ export default class Plugin implements OmeggaPlugin<Config, {}> {
   config: PC<Config>;
   store: PS<{}>;
 
+  cachedCount: number;
+
   constructor(omegga: OL, config: PC<Config>, store: PS<{}>) {
     this.omegga = omegga;
     this.config = config;
@@ -20,29 +22,53 @@ export default class Plugin implements OmeggaPlugin<Config, {}> {
     );
   };
 
-  getPlayerCount = async (): Promise<[number, number]> => {
+  errorMessage = (message: any) => {
+    console.error('Priority slots error: ' + message);
+    try {
+      this.omegga.whisper('x', OMEGGA_UTIL.chat.red(message.toString()));
+    } catch (_) {}
+  };
+
+  getPlayerCountDirectly = async (): Promise<[number, number]> => {
     const match = await Omegga.watchLogChunk(
       'Server.Status',
       /Players \((\d+)\/(\d+)\):$/,
       { first: (match) => match[0].startsWith('Players ('), timeoutDelay: 1000 }
     );
 
-    return [Number(match[0][1]), Number(match[0][2])];
+    const count = Number(match[0][1]);
+    const max = Number(match[0][2]);
+    this.cachedCount = max;
+    return [count, max];
+  };
+
+  getPlayerCount = async (): Promise<[number, number]> => {
+    try {
+      return await this.getPlayerCountDirectly();
+    } catch (e) {
+      if (this.cachedCount)
+        return [this.omegga.getPlayers().length, this.cachedCount];
+      throw { message: 'no_cached_count', error: e };
+    }
   };
 
   async init() {
     this.omegga.on('join', async ({ id }) => {
       setTimeout(async () => {
-        const player = this.omegga.getPlayer(id);
-        if (this.isPriority(player)) return;
+        try {
+          const player = this.omegga.getPlayer(id);
+          if (this.isPriority(player)) return;
 
-        const [count, max] = await this.getPlayerCount();
-        if (count > max - this.config.slots) {
-          this.omegga.writeln(
-            `Chat.Command /Kick "${player.name}" "${this.config.message
-              .replace(/\{\}/g, this.config.slots.toString())
-              .replace(/"/g, '\\"')}"`
-          );
+          const [count, max] = await this.getPlayerCount();
+          if (count > max - this.config.slots) {
+            this.omegga.writeln(
+              `Chat.Command /Kick "${player.name}" "${this.config.message
+                .replace(/\{\}/g, this.config.slots.toString())
+                .replace(/"/g, '\\"')}"`
+            );
+          }
+        } catch (e) {
+          this.errorMessage(e);
         }
       });
     });
