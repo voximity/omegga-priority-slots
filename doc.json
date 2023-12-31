@@ -18,6 +18,11 @@
       "itemType": "role",
       "description": "The roles that are considered priority players.",
       "default": []
+    },
+    "only_if_slots_unfilled": {
+      "type": "boolean",
+      "description": "Kick players only when the staff slots are unfilled, as opposed to always.",
+      "default": false
     }
   },
   "commands": []
